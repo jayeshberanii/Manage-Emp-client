@@ -11,6 +11,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import Typography from '@mui/material/Typography';
 import { Input } from '@mui/material';
 import * as XlSX from 'xlsx'
+import { addEmpDetails } from '../../../services/empDetails';
 
 const BootstrapDialog = styled(Dialog)(({ theme }) => ({
     '& .MuiDialogContent-root': {
@@ -58,18 +59,19 @@ export default function EmpModal({ handleClose, open }) {
 
     const handleOnchange=(e)=>{
         let selectedFile=e.target.files[0]
-        console.log(selectedFile);
+        console.log(selectedFile.name);
         let fileTypes=['application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
         if(selectedFile){
             if(fileTypes.includes(selectedFile.type)){
                 setError(null)
+                document.getElementById('file-name').innerHTML=selectedFile.name
                 let reader=new FileReader()
                 reader.readAsArrayBuffer(selectedFile)
                 reader.onload=(e)=>{
                     setFile(e.target.result)
                 }
             }else{
-                setError("Something went wrong!!")
+                setError("Please Upload .xlsx file!!")
                 setFile(null)
             }
         }else{
@@ -84,6 +86,7 @@ export default function EmpModal({ handleClose, open }) {
             const sheet=workbook.Sheets[sheetName]
             const data=XlSX.utils.sheet_to_json(sheet)
             console.log("excelData:::",data);
+            addEmpDetails(data)
             setExcelData(data)
         }
     }
@@ -97,12 +100,14 @@ export default function EmpModal({ handleClose, open }) {
             >
                 <div>
                     <BootstrapDialogTitle id="customized-dialog-title" onClose={handleClose}>
-                        <h5>Import Items</h5>
+                        <b>Import Items</b>
                     </BootstrapDialogTitle>
                     <DialogContent dividers>
-                        <Typography gutterBottom>
+                        <div>
                             <div className='error-message'>
-                                Something went wrong
+                                {
+                                    error
+                                }
                             </div>
                             <div className='upload-section flex items-center justify-center'>
                                 <Button variant='outlined'>
@@ -113,7 +118,7 @@ export default function EmpModal({ handleClose, open }) {
                                 </Button>
                                 <div id="file-name"></div>
                             </div>
-                        </Typography>
+                        </div>
                     </DialogContent>
                     <DialogActions className='justify-between'>
                     <Button variant="outlined" color="error" onClick={handleClose}>
