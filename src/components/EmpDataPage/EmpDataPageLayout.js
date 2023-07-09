@@ -1,24 +1,43 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import EmpDataTable from './EmpDataPageComponents/EmpDataTable'
 import AddIcon from '@mui/icons-material/Add';
 import { Button } from '@mui/material';
 import EmpModal from './EmpDataPageComponents/EmpModal';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchEmpData } from '../../Redux/Slices/EmpDataSlice';
+import { deleteEmpDetails } from '../../services/empDetails';
 
 const EmpDataPageLayout = () => {
   const [open, setOpen] = useState(false);
-  const contents = useSelector((state) => state.empData.data)
+  const [data, setData] = useState([])
+  const empData = useSelector((state) => state.empData.data)
   const isLoading = useSelector((state) => state.empData.isLoading)
   const error = useSelector((state) => state.empData.error)
-  if(isLoading){
+  const dispatch = useDispatch()
+
+  useEffect(() => {
+    dispatch(fetchEmpData())
+  }, [])
+  useEffect(() => {
+    setData(empData)
+  }, [empData])
+  if (isLoading) {
     console.log("is loading:::");
   }
-  if(error){
+  if (error) {
     console.log("error::");
   }
-  if(contents){
-    console.log("contents",contents);
+  if (data) {
+    console.log("data", data);
   }
+  const handleDeleteClick = (data) => () => {
+    deleteEmpDetails(data.row._id)
+      .then(res => {
+        console.log("Deleted Success::::")
+        dispatch(fetchEmpData())
+      })
+      .catch(err => console.log(err.message))
+  };
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -26,22 +45,24 @@ const EmpDataPageLayout = () => {
   const handleClose = () => {
     setOpen(false);
   };
+
+
   return (
     <>
-    <div className='container'>
-      <div className='flex justify-between'>
-        <h2 className='title'>Employee Details</h2>
-        <Button onClick={handleClickOpen} variant='outlined' className='add-button'>
-          <AddIcon className='plus-icon'/>
-        </Button>
+      <div className='container'>
+        <div className='flex justify-between'>
+          <h2 className='title'>Employee Details</h2>
+          <Button onClick={handleClickOpen} variant='outlined' className='add-button'>
+            <AddIcon className='plus-icon' />
+          </Button>
+        </div>
+        <div className='sub-menu flex items-center justify-between'>
+          <h3>Employee details</h3>
+          <span>icons</span>
+        </div>
+        <EmpDataTable data={data} loading={isLoading} handleDeleteClick={handleDeleteClick} />
       </div>
-      <div className='sub-menu flex items-center justify-between'>
-        <h3>Employee details</h3>
-        <span>icons</span>
-      </div>
-      <EmpDataTable />      
-    </div>
-    <EmpModal handleClose={handleClose} open={open}/>
+      <EmpModal handleClose={handleClose} open={open} />
     </>
   )
 }

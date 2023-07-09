@@ -12,6 +12,8 @@ import Typography from '@mui/material/Typography';
 import { Input } from '@mui/material';
 import * as XlSX from 'xlsx'
 import { addEmpDetails } from '../../../services/empDetails';
+import { useDispatch } from 'react-redux';
+import { fetchEmpData } from '../../../Redux/Slices/EmpDataSlice';
 
 const BootstrapDialog = styled(Dialog)(({ theme }) => ({
     '& .MuiDialogContent-root': {
@@ -53,9 +55,9 @@ BootstrapDialogTitle.propTypes = {
 
 export default function EmpModal({ handleClose, open }) {
 
-    const[file,setFile]=React.useState()
-    const[error,setError]=React.useState()
-    const[excelData,setExcelData]=React.useState()
+    const[file,setFile]=React.useState(null)
+    const[error,setError]=React.useState(null)
+    const dispatch=useDispatch( )
 
     const handleOnchange=(e)=>{
         let selectedFile=e.target.files[0]
@@ -79,15 +81,19 @@ export default function EmpModal({ handleClose, open }) {
         }
     }
 
-    const submitHandler=()=>{
+    const submitHandler=async()=>{
         if(file!==null){
             const workbook=XlSX.read(file,{type:"buffer"})
             const sheetName=workbook.SheetNames[0]
             const sheet=workbook.Sheets[sheetName]
             const data=XlSX.utils.sheet_to_json(sheet)
             console.log("excelData:::",data);
-            addEmpDetails(data)
-            setExcelData(data)
+            await addEmpDetails(data)
+            dispatch(fetchEmpData)
+            setFile("")
+            handleClose()
+        }else{
+            setError("Please Upload a file!!")
         }
     }
 

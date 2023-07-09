@@ -1,61 +1,108 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
-import { DataGrid } from '@mui/x-data-grid';
+import { DataGrid, GridActionsCellItem, GridToolbar, GridRowModesModel, GridRowModes } from '@mui/x-data-grid';
 import { Button, Modal, Stack, Typography } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/DeleteOutlined';
+import { deleteEmpDetails, updateEmpDetails } from '../../../services/empDetails';
+import {useDispatch} from 'react-redux';
+import { fetchEmpData } from '../../../Redux/Slices/EmpDataSlice';
 
-const columns = [
-    { field: 'id', headerName: 'ID', width: 90 },
-    {
-        field: 'firstName',
-        headerName: 'First name',
-        width: 150,
-        editable: true,
-    },
-    {
-        field: 'lastName',
-        headerName: 'Last name',
-        width: 150,
-        editable: true,
-    },
-    {
-        field: 'age',
-        headerName: 'Age',
-        type: 'number',
-        width: 110,
-        editable: true,
-    },
-    {
-        field: 'fullName',
-        headerName: 'Full name',
-        description: 'This column has a value getter and is not sortable.',
-        sortable: false,
-        width: 160,
-        valueGetter: (params) =>
-            `${params.row.firstName || ''} ${params.row.lastName || ''}`,
-    },
-];
-
-const rows = [
-    { id: 1, lastName: 'Snow', firstName: 'Jon', age: 35 },
-    { id: 2, lastName: 'Lannister', firstName: 'Cersei', age: 42 },
-    { id: 3, lastName: 'Lannister', firstName: 'Jaime', age: 45 },
-    { id: 4, lastName: 'Stark', firstName: 'Arya', age: 16 },
-    { id: 5, lastName: 'Targaryen', firstName: 'Daenerys', age: null },
-    { id: 6, lastName: 'Melisandre', firstName: null, age: 150 },
-    { id: 7, lastName: 'Clifford', firstName: 'Ferrara', age: 44 },
-    { id: 8, lastName: 'Frances', firstName: 'Rossini', age: 36 },
-    { id: 9, lastName: 'Roxie', firstName: 'Harvey', age: 65 },
-];
-
-export default function EmpDataTable() {
+export default function EmpDataTable({ data, loading,handleDeleteClick }) {
     const [nbRows, setNbRows] = React.useState(3);
-    const removeRow = () => setNbRows((x) => Math.max(0, x - 1));
-    const addRow = () => setNbRows((x) => Math.min(100, x + 1));
+    const [rows, setRows] = React.useState([])
+    const [rowModesModel, setRowModesModel] = React.useState({})
+    const dispatch=useDispatch()
+    React.useEffect(() => {
+        if (data.length > 0) {
+            const ROW_ITEMS = data.map(({ EmployeeID: id, ...rest }) => {
+                return { id, ...rest }
+            })
+            setRows(ROW_ITEMS)
+        }
+    }, [data])
+    const handleEditClick = ({id}) => () => {
+        setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } });
+    };
+    
+
+    const columns = [
+        { field: 'id', headerName: 'ID', width: 50 },
+        {
+            field: 'EmployeeName',
+            headerName: 'Name',
+            width: 110,
+            type: "string",
+            editable: true,
+        },
+        {
+            field: 'Designation',
+            headerName: 'Designation',
+            width: 110,
+            type: "string",
+            editable: true,
+        },
+        {
+            field: 'SalaryDetails',
+            headerName: 'Salary',
+            type: 'number',
+            width: 110,
+            editable: true,
+        },
+        {
+            field: 'Address',
+            headerName: 'Location',
+            width: 110,
+            type: 'string',
+            editable: true,
+        },
+        {
+            field: 'EmployeeStatus',
+            headerName: 'Status',
+            width: 110,
+            type: 'string',
+            editable: true,
+        },
+        {
+            field: 'actions',
+            type: 'actions',
+            headerName: 'Actions',
+            width: 100,
+            cellClassName: 'actions',
+            getActions: (id ) => {
+                return [<GridActionsCellItem
+                    icon={<EditIcon />}
+                    label="Edit"
+                    className="textPrimary"
+                    onClick={handleEditClick(id)}
+                    color="inherit"
+                />,
+                <GridActionsCellItem
+                    icon={<DeleteIcon />}
+                    label="Delete"
+                    onClick={handleDeleteClick(id)}
+                    color="inherit"
+                />]
+            }
+        }
+
+    ];
+    // const COL_ITEMS=Object.keys(data[0])
+    // const columns=COL_ITEMS.map((item)=>({
+    //     field: item,
+    //     headerName: item,
+    //     width: 110,
+    //     editable: true,
+    // }))
+    const handleClick = () => {
+        const id = Math.floor(Math.random() * 1000)
+        setRows((oldRows) => [{ id, EmployeeName: '', Designation: '', SalaryDetails: '', EmployeeStatus: '', isNew: true }, ...oldRows,]);
+    };
     return (
-        <>
+        <div className='data-grid'>
             <Box sx={{ height: 400, width: '100%' }}>
                 <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-                    <Button size="small" onClick={addRow}>
+                    <Button size="small" onClick={handleClick}>
                         Add New Employee
                     </Button>
                 </Stack>
@@ -70,10 +117,20 @@ export default function EmpDataTable() {
                         },
                     }}
                     pageSizeOptions={[5]}
+                    editMode="row"
                     checkboxSelection
+                    GridRowModesModel={rowModesModel}
+                    loading={loading}
                     disableRowSelectionOnClick
+                    onRowEditStop={(params, event) => {
+                        console.log(params);
+                        updateEmpDetails(params.row._id,params.row)
+                    }}
+                    slots={{
+                        toolbar: GridToolbar,
+                    }}
                 />
             </Box>
-        </>
+        </div>
     );
 }
